@@ -1,0 +1,22 @@
+#!/bin/sh
+
+hostname=$(curl -s http://169.254.169.254/latest/meta-data/hostname)
+region=$(curl -s  http://169.254.169.254/latest/meta-data/placement/availability-zone | sed -e 's/.$//')
+instanceId=$(curl -s http://169.254.169.254/latest/meta-data/instance-id/)
+instanceType=$(curl -s http://169.254.169.254/latest/meta-data/instance-type/)
+tagName=$(aws ec2 describe-instances --region ${region} --query "Reservations[].Instances[?InstanceId==\`${instanceId}\`].[Tags[?Key==\`Name\`].Value]" --output text)
+tagService=$(aws ec2 describe-instances --region ${region} --query "Reservations[].Instances[?InstanceId==\`${instanceId}\`].[Tags[?Key==\`Service\`].Value]" --output text)
+tagEnv=$(aws ec2 describe-instances --region ${region} --query "Reservations[].Instances[?InstanceId==\`${instanceId}\`].[Tags[?Key==\`Environment\`].Value]" --output text)
+os=$(cat /etc/system-release)
+
+cat << EOF
+os           : ${os}
+hostname     : ${hostname}
+instance id  : ${instanceId}
+instance type: ${instanceType}
+region       : ${region}
+name         : ${tagName}
+service      : ${tagService}
+environment  : ${tagEnv}
+
+EOF
